@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>string</title>
+</head>
+<body>
+
+
+	<script type="text/javascript">
+// 题目链接 http://mianshiti.diandian.com/post/2012-10-26/40041431669
+
+// 1 判断字符串是否是这样组成的，第一个必须是字母，后面可以是字母、数字、下划线，总长度为5-20
+// var reg = /^[a-zA-Z][a-zA-Z_0-9]{4,19}$/;
+// reg.test("a1a__a1a__a1a__a1a__");
+	(function(){
+		var str = "adcsfd2323_ dfs";
+		var reg = /\b[a-zA-Z]{1}[a-zA-Z0-9_]{5,19}\b/;
+		var matches1 = reg.exec(str);
+		var matches2 = str.match(reg);
+		document.write(matches1.index+" "+matches1[0]+"<br>");
+		document.write(matches2.index+" "+matches2[0]);
+	})(); 		
+
+
+// 2.截取字符串abcdefg的efg
+// var str = ;
+// if (/efg/.test(str)) {
+//   var efg = str.substr(str.indexOf("efg"), 3);
+//   alert(efg);
+// }
+	(function(){
+		var str = "abcdeefg";
+		var reg = /efg/;
+		if(reg.test(str)){
+			var efg = str.substr(str.indexOf("efg"), 3);
+			console.log(efg);
+		}
+	})();
+
+// 3，判断一个字符串中出现次数最多的字符，统计这个次数
+	(function(){
+		var str = "1232aaaaabcddd";
+		var obj = {};
+		for(var i=0; i<str.length; i++){
+			 var key = str[i];
+			if(obj[key]){
+				obj[key]++;
+			} 
+			else{
+				obj[key] = 1;
+			}
+		}
+		
+		var max = 0;
+		var maxAt = 0;
+		var key = 0;
+		for(key in obj){
+			if(max < obj[key]) {
+				max = obj[key];
+				maxAt = key;
+			}
+		}
+		console.log(obj);
+		console.log("max "+max+" maxAt "+maxAt);
+	})();
+
+
+// 8，编写一个方法 求一个字符串的字节长度
+// 假设：
+// 一个英文字符占用一个字节，一个中文字符占用两个字节
+	(function(){
+		var str = "sddfdfs的说法水电费ddd";
+		var len = str.length;
+		for(var i=0; i<str.length; i++){
+			if(str.charCodeAt(i)>255){
+				len++;
+			}		
+		}
+		console.log(len);
+	})();
+
+	</script>
+</body>
+</html>
