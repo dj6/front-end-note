@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style type="text/css">
+		.father {
+			position: relative;
+			width: 800px;
+			height: 800px;
+			padding: 100px;
+			margin: 100px;
+			border: 1px solid black;
+			background-color: pink;
+		}
+		.son{
+			position: absolute;
+			left: 100px;
+			top: 100px;
+			width: 100px;
+			height: 100px;
+			padding: 100px;
+			margin: 100px;
+			border:1px solid black;
+			background-color: green;
+			/*给子元素设置absolute属性，相对于父元素位移
+			从父元素的border计算left和top的偏移
+			对于子元素，在父元素内进行left、top偏移后，按margin-border-padding的顺序开始进行盒模型布局
+
+			*/
+		}
+	</style>
+</head>
+<body>
+	<div class="father">
+		<div class="son"></div>
+	</div>
+</body>
+</html>

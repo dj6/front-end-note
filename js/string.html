@@ -80,6 +80,28 @@
 		console.log(len);
 	})();
 
+// 21. 请编写一个JavaScript函数 parseQueryString，它的用途是把URL参数解析为一个对象，如：
+// var url = “http://witmax.cn/index.php?key0=0&key1=1&key2=2″;
+	(function(){
+
+			function parseQueryString(url){
+				type = Object.prototype.toString.call(url).slice(8, -1).toLowerCase();
+				if(type !== "string") return console.log("the input must be a string!");
+				var arr0 = url.split("?");
+				var arr1 = arr0[1].split("&");
+				var obj = {};
+				for(var i=0; i< arr1.length; i++){
+					var attr = arr1[i].split("=");
+					obj[attr[0]] = attr[1];
+				}
+				return obj;
+			}		
+		
+			var obj = parseQueryString("http://witmax.cn/index.php?key0=0&key1=1&key2=2");
+			console.log(obj["key0"]);
+	})();
+
+
 	</script>
 </body>
 </html>

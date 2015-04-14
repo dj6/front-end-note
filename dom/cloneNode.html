@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title></title>
+</head>
+<body>
+	<p id="node">this is a node</p>
+</body>
+<script type="text/javascript">
+	window.onload = function(){
+		var node = document.getElementById("node");
+		var clone = node.cloneNode(true);
+		clone.innerText = "changed";
+		document.body.appendChild(clone);
+		alert(node.innerText);
+	};
+</script>
+</html>

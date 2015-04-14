@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+</head>
+<body>
+	<script>
+		function deepClone(obj){
+    var result={},oClass=isClass(obj);
+
+    for(key in obj){
+        var copy=obj[key];
+        if(isClass(copy)=="Object"){
+            result[key]=arguments.callee(copy);
+        }else if(isClass(copy)=="Array"){
+            result[key]=arguments.callee(copy);
+        }else{
+            result[key]=obj[key];
+        }
+    }
+    return result;
+}
+function isClass(o){
+    if(o===null) return "Null";
+    if(o===undefined) return "Undefined";
+    return Object.prototype.toString.call(o).slice(8,-1);
+}
+//克隆一个
+var arr=["a","b","c"];
+var oNew=deepClone(arr);
+console.log(oNew);//Object {0: "a", 1: "b", 2: "c"} 
+	</script>
+</body>
+</html>
