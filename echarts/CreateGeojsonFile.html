@@ -2,7 +2,7 @@
 <html>
 <head>
       <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-      <title>城市下拉列表</title>
+      <title>geojson文件生成工具</title>
       <style type="text/css">
         body{
             margin:0;
@@ -18,28 +18,41 @@
             bottom:0;
         }
         #tip{
-            height:45px;
-            background-color:#fff;
+
+            text-align: center;
+            background: rgba(0,0,0,0.5);
+            color: #fff;
+/*            background-color: #003366;
+
+            /*vertical-align: middle;*/
+            height: 100px;
+            /*line-height: 150px;*/
+            width: 400px;
+
             padding-left:10px;
             padding-right:10px;
             border:1px solid #969696;
             position:absolute;
             font-size:12px;
-            right:10px;
-            bottom:20px;
+            left:30px;
+            top:20px;
             border-radius:3px;
-            line-height:45px;
         }
+
       </style>
 </head>
 <body>
       <div id="mapContainer"></div>
       <div id="tip">
+            <h1>geojson文件在线生成工具</h1>
             省：<select id='province' style="width:100px"  onchange='search(this)'></select>
             市：<select id='city' style="width:100px"  onchange='search(this)'></select>
-            区：<select id='district' style="width:100px" onchange='search(this)'></select>
-            商圈：<select id='biz_area' style="width:100px"></select>
+            <input type="button" id="downLoadButton" value="下载">
+            <!-- <button id = 'downLoadButton'>下载</button> -->
+            <select id='district' style="width:100px; display:none" onchange='search(this)'></select>
+            <select id='biz_area' style="width:100px; display:none"></select>
       </div>
+
 
      <script type="text/javascript" src="http://webapi.amap.com/maps?v=1.3&key=9d4f5c2078ba12cb9d9d09c4e81c95d0"></script>
      <script type='text/javascript' src='FileSaver.min.js'></script>
@@ -94,9 +107,9 @@
                 var bounds = e.districtList[m].boundaries;
 
                 //只绘制 区, 且 本级别行政区划是上一级区划的下级行政区
-                if(data == "district" && dList[m].citycode === citycode){
-                console.log('citycode' + citycode);
-                console.log('owncode' +dList[m].citycode);
+                // if(data == "district" && dList[m].citycode === citycode){
+                // console.log('citycode' + citycode);
+                // console.log('owncode' +dList[m].citycode);
 
                   if(bounds) {
                     for(var i =0, l = bounds.length; i < l; i++){
@@ -124,7 +137,7 @@
                 if(list.length >= 1) {
                   subList = list[0].districtList;
                   level = list[0].level;
-                }
+                // }
 
                 //清空下一级别的下拉列表
                 if(level === 'province'){
@@ -157,6 +170,8 @@
               }
         }
 
+
+
         function search(obj) {
           //清除地图上所有覆盖物
           for(var i = 0, l = polygons.length; i < l; i ++){
@@ -166,7 +181,7 @@
           var option = obj[obj.options.selectedIndex];
           var arrTemp = option.value.split('|');
 
-          console.log(arrTemp);
+           console.log(arrTemp);
           var level = arrTemp[0];//行政级别
           citycode = arrTemp[1];// 城市编码
           var keyword = option.text; //关键字
@@ -176,12 +191,31 @@
           district.search(keyword, function(status, result){
 
             getData(result);
-            // !!
-            getGeojson(result.districtList[0]);
-
+            // getGeojson(result.districtList[0]);
 
           });
         }
+
+        function downLoadGeojson(obj) {
+          //清除地图上所有覆盖物
+
+          var arrTemp = obj.value.split('|');
+
+
+          var level = arrTemp[0];//行政级别
+          citycode = arrTemp[1];// 城市编码
+          var keyword = obj.text; //关键字
+
+          district.setLevel(level); //行政区级别
+          //行政区查询
+          district.search(keyword, function(status, result){
+
+            // getData(reult);
+            getGeojson(result.districtList[0]);
+
+          });
+        }
+
 
         //need id, name, childNum, cp, cooridates
         function Feature() {
@@ -241,22 +275,22 @@
 
 
             var dList = data.districtList;
-            console.log(data);
+            // console.log(data);
             var cityCode = data.citycode;
 
             for(var m = 0, mlength = dList.length; m < mlength; m++) {
 
                 var keyword = dList[m].name;
                 asynFlag++;
-                console.log(keyword);
+                // console.log(keyword);
                 district.search(keyword, function(status, result){
                     asynFlag--;
-                    console.log('result');
-                    console.log(result);
+                    // console.log('result');
+                    // console.log(result);
                     var subDistrictList = result.districtList;
                     var feature = createFeature(subDistrictList, citycode);
                     features.push(feature);
-                    console.log(features);
+                    // console.log(features);
                     feature = null;
                     callback();
                     // for (var s = 0, slength = subDistrictList.length; s < slength; s++) {
@@ -300,11 +334,11 @@
                     feature.properties.cp = cp;
                     cp = [];
                     getCoo(district, coordinatesSet);
-                    console.log(coordinatesSet.length);
+                    // console.log(coordinatesSet.length);
                     feature.geometry.coordinates = coordinatesSet;
-                    console.log(coordinatesSet.length);
+                    // console.log(coordinatesSet.length);
                     coordinatesSet = [];
-                    console.log(feature);
+                    // console.log(feature);
                     return feature;
                 }
 
@@ -350,24 +384,20 @@
 
         }
 
-        function writeFile(fileName, json) {
-        // "f:\\421.json"
-        // for (var i = 0; i < cos.length; i++) {
-        var fso = new ActiveXObject("Scripting.FileSystemObject");
-        var f1 = fso.createtextfile(fileName, true, true);
+        // function writeFile(fileName, json) {
+        // // "f:\\421.json"
+        // // for (var i = 0; i < cos.length; i++) {
+        // var fso = new ActiveXObject("Scripting.FileSystemObject");
+        // var f1 = fso.createtextfile(fileName, true, true);
 
-        var str = JSON.stringify(json);
-        // console.log(str);
-        f1.write(str);
-        f1.close();
+        // var str = JSON.stringify(json);
+        // // console.log(str);
+        // f1.write(str);
+        // f1.close();
+        // // }
         // }
-        }
 
         function compressAndDownload(geojson) {
-        // if (! BUILD_CONFIG.source) {
-        // code = jsCompress(code);
-        // }
-
         var str = JSON.stringify(geojson);
         // console.log(str);
         var blob = new Blob([str], {
@@ -375,24 +405,20 @@
         });
 
         var fileName = ['success'];
-        // if (BUILD_CONFIG.amd) {
-        // fileName.push('amd');
-        // }
-        // if (BUILD_CONFIG.source) {
-        // fileName.push('source');
-        // }
         fileName.push('json');
         saveAs(blob, fileName.join('.'));
-
-        // builderLog('<br />Completed');
-
-        // setTimeout(function () {
-        //     window.close();
-        // }, 3000);
-
-        // document.getElementById('tip').innerHTML = '构建完毕';
         }
 
+
+        var downLoadButton = document.getElementById('downLoadButton');
+        downLoadButton.addEventListener('click', function(){
+            var cityList = document.getElementById('city');
+            var selectCity = cityList[cityList.options.selectedIndex];
+            console.log(selectCity);
+            downLoadGeojson(selectCity);
+            //
+
+        });
 
     </script>
 </body>
