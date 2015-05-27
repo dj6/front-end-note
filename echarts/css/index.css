@@ -150,8 +150,10 @@ main h1 {
 }
 
 #range select {
-  width: 200px;
+  width: 150px;
+
 }
+
 
 #range label {
   display: inline-block;

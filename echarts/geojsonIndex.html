@@ -19,7 +19,7 @@
         <div id="configuration">
 
             <section id="range">
-                <h3>范围<span>range</span></h3>
+                <h3>范围<span>  range</span></h3>
                 <p>
                     <label for="province">省：</label>
                     <select id='province'></select>
@@ -27,42 +27,39 @@
 
                 <p>
                     <label for="province">市：</label>
-                    <select id='city'><option>--全部--</option></select>
+                    <select id='city'><option>--  所有城市  --</option></select>
                 </p>
 
                 <p>
                     <label for="province">区县：</label>
-                    <select id='district'><option>--全部--</option></select>
+                    <select id='district'><option>--  所有区县  --</option></select>
                 </p>
 
             </section>
 
             <section id="type">
-                <h3>精度<span>precision</span></h3>
+                <h3>精度<span>  precision</span></h3>
                 <p>
-                    <input type="radio" name="type" value="outline" id="outline"checked="checked">
+                    <input type="radio" name="type" value="outline" id="outline" checked="checked">
                     <label for="outline">轮廓</label>
                     <p class="desc">地图数据仅包括所选区域的外围轮廓</p>
                 </p>
                 <p>
                     <input type="radio" name="type" value="outlineAndPartition" id="outlineAndPartition">
                     <label for="outlineAndPartition">轮廓及内部划分</label>
-                    <p class="desc">地图数据包括所选区域的外围轮廓以及内部子区域轮廓</p>
+                    <p class="desc">地图数据包括所选区域的外围轮廓, 以及内部子区域轮廓 (对于 "区县" 粒度的区域, 默认仅生成外轮廓)</p>
                 </p>
             </section>
 
             <section id="compress">
-                <h3>是否压缩<span>compress</span></h3>
+                <h3>是否压缩<span>  compress</span></h3>
                 <p>
-                    <input type="radio" name="compress" value="isCompressed" id="isCompressed" checked>
+                    <input type="checkbox" name="compress" value="isCompressed" id="isCompressed" checked>
                     <label for="isCompressed">压缩版本</label>
-                    <p class="desc">文案文案</p>
+                    <p class="desc">压缩后体积占用更小, 地图精度不变, 但是只能使用 UTF-8 编码
+</p>
                 </p>
-                <p>
-                    <input type="radio" name="compress" value="notCompressed" id="notCompressed">
-                    <label for="notCompressed">完整版本</label>
-                    <p class="desc">文案文案</p>
-                </p>
+
             </section>
         </div>
         <div id="action">
@@ -74,39 +71,45 @@
     </footer>
 <div id="mapContainer"></div>
     <script src="lib/jquery.js"></script>
+    <script src="chunk/download.js"></script>
     <script type="text/javascript" src="http://webapi.amap.com/maps?v=1.3&key=9d4f5c2078ba12cb9d9d09c4e81c95d0"></script>
-    <script type='text/javascript' src='FileSaver.min.js'></script>
+    <script type='text/javascript' src='lib/FileSaver.min.js'></script>
 
-            <script type="text/javascript">
-            var mapObj, district, polygons=[], citycode, asynFlag = 0;
+    <script type="text/javascript">
+    var mapObj, district, polygons=[], citycode, asynFlag = 0, fileStr = '';
 
-            var geojson = new Geojson();
-            var features = [];
-            var feature = new Feature();
+    //是否是直辖市或者香港澳门
+    var isCentralCity = false;
+    var CENTRAL_CITIES = ['北京市','上海市','天津市','重庆市','香港特别行政区', '澳门特别行政区'];
 
-            var citySelect = document.getElementById('city');
-            var districtSelect = document.getElementById('district');
-            var areaSelect = document.getElementById('biz_area');
+    var geojson = new Geojson();
+    var features = [];
+    var feature = new Feature();
 
-            mapObj = new AMap.Map('mapContainer',{
-                resizeEnable: true,
-                layers: [
-                new AMap.TileLayer()
-                ],
-                view: new AMap.View2D({
-                    center: new AMap.LngLat(116.30946,39.937629),
-                    zoom: 3
-                })
-            });
+    var INIT_PROVINCE_CONTENT = '<option>--  所有省  --</option>';
+    var INIT_CITY_CONTENT = '<option>--  所有城市  --</option>';
+    var INIT_DISTRICT_CONTENT = '<option>--  所有区县  --</option>';
+    var INIT_DEFAULT_CONTENT = '<option>--  全部  --</option>';
 
-            var provinceList = ['北京市', '天津市', '河北省', '山西省', '内蒙古自治区', '辽宁省', '吉林省','黑龙江省', '上海市', '江苏省', '浙江省', '安徽省', '福建省', '江西省', '山东省','河南省', '湖北省', '湖南省', '广东省', '广西壮族自治区', '海南省', '重庆市','四川省', '贵州省', '云南省', '西藏自治区', '陕西省', '甘肃省', '青海省', '宁夏回族自治区', '新疆维吾尔自治区', '台灣', '香港特别行政区', '澳门特别行政区'];
+    mapObj = new AMap.Map('mapContainer',{
+        resizeEnable: true,
+        layers: [
+        new AMap.TileLayer()
+        ],
+        view: new AMap.View2D({
+            center: new AMap.LngLat(116.30946,39.937629),
+            zoom: 3
+        })
+    });
 
-            var provinceSelect = document.getElementById('province');
-            var content = '<option>--全部--</option>';
-            for(var i =0, l = provinceList.length; i < l; i++){
-                content += '<option value="province">'+provinceList[i]+'</option>';
-            }
-            provinceSelect.innerHTML = content;
+    var provinceList = ['北京市', '天津市', '河北省', '山西省', '内蒙古自治区', '辽宁省', '吉林省','黑龙江省', '上海市', '江苏省', '浙江省', '安徽省', '福建省', '江西省', '山东省','河南省', '湖北省', '湖南省', '广东省', '广西壮族自治区', '海南省', '重庆市','四川省', '贵州省', '云南省', '西藏自治区', '陕西省', '甘肃省', '青海省', '宁夏回族自治区', '新疆维吾尔自治区', '香港特别行政区', '澳门特别行政区'];
+
+    var content = INIT_PROVINCE_CONTENT;
+
+    for(var i =0, l = provinceList.length; i < l; i++){
+        content += '<option value="province">'+provinceList[i]+'</option>';
+    }
+    $('#province').html(content);
 
     //行政区划查询
 
@@ -123,467 +126,58 @@
 
 
 
-    function getData(e) {
+    $('#downLoadButton').click(downLoadButtonCallback);
 
-    var initContent = '<option>--全部--</option>';
-    var list = e.districtList || [],
-    subList =[], level, nextLevel;
-    if(list.length >= 1) {
-        subList = list[0].districtList;
-        level = list[0].level;
-    // }
+    function downLoadButtonCallback() {
 
-    //清空下一级别的下拉列表
-    if(level === 'province'){
 
-        nextLevel = 'city';
-        citySelect.innerHTML = initContent;
-        districtSelect.innerHTML = initContent;
-        // areaSelect.innerHTML = initContent;
-    }else if(level === 'city'){
+        var selectProvince = $('#province').find("option:selected");
+        var selectCity = $('#city').find("option:selected");
+        var selectDistrict = $('#district').find("option:selected");
+        var trimProvince = INIT_PROVINCE_CONTENT.replace(/<option>(.*?)<\/option>/g,"$1");
+        var trimCity = INIT_CITY_CONTENT.replace(/<option>(.*?)<\/option>/g,"$1");
+        var trimDistrict = INIT_DISTRICT_CONTENT.replace(/<option>(.*?)<\/option>/g,"$1");
 
-        nextLevel = 'district';
-        districtSelect.innerHTML = initContent;
-        // areaSelect.innerHTML = initContent;
-    } else if(level === 'district') {
 
-        nextLevel = 'biz_area';
-        // areaSelect.innerHTML = initContent;
-    }
+        var isOnlyOutline = $("input[name='type']:checked").val() == 'outline' ? true : false;
+        var isCompressed = $("#isCompressed").is(':checked');
 
-    if(subList){
-        var contentSub = initContent;
-        for(var i=0,l=subList.length; i<l; i++){
-            var name = subList[i].name;
-            var levelSub = subList[i].level;
-            var cityCode = subList[i].citycode;
-            contentSub += '<option value="'+levelSub+'|'+cityCode+'">'+name+'</option>';
-        }
-        document.querySelector('#'+levelSub).innerHTML = contentSub;
-    }
-    }
-    }
-
-
-
-    function search(obj) {
-    //清除地图上所有覆盖物
-    for(var i = 0, l = polygons.length; i < l; i ++){
-        polygons[i].setMap(null);
-    }
-
-    var option = obj[obj.options.selectedIndex];
-    var arrTemp = option.value.split('|');
-
-    console.log(arrTemp);
-    var level = arrTemp[0];//行政级别
-    citycode = arrTemp[1];// 城市编码
-    var keyword = option.text; //关键字
-
-    district.setLevel(level); //行政区级别
-    //行政区查询
-    district.search(keyword, function(status, result){
-
-        getData(result);
-    // getGeojson(result.districtList[0]);
-
-    });
-    }
-
-
-
-    //need id, name, childNum, cp, cooridates
-    function Feature() {
-        this.type = "Feature";
-        this.id = '';
-        this.properties = {
-            "name" : '',
-            "cp" : [],
-            "childNum" : 1
-        };
-        this.geometry = {
-            "type" : "Polygon",
-            "coordinates" : []
-        };
-    }
-
-    //need features
-    function Geojson() {
-        this.type  = "FeatureCollection";
-        this.features =[];
-    }
-
-    // function createDetailedGeojson(data, isCompressed) {
-    //     var level = data.level;
-    //     switch (level) {
-    //         case 'province':
-    //         getProvinceGeojson(data, isCompressed, callback);
-    //         break;
-    //         case 'city':
-    //         getCityGeojson(data, isCompressed, callback);
-    //         break;
-    //         case 'district':
-    //         getDistGeojson(data, isCompressed, callback);
-    //         break;
-    //     }
-
-    // }
-
-    function detailedCallback() {
-        if (asynFlag === 0) {
-            geojson.features = features;
-            console.log(JSON.stringify(geojson));
-            console.log('end');
-    // !!
-    downloadGeojson(geojson);
-
-    // writeFile("d:\\tt.json", geojson);
-    // "f:\\421.json"
-    geojson = {};
-    features = [];
-    }
-    }
-
-
-    function outlineCallback() {
-
-        geojson.features = features;
-        console.log(JSON.stringify(geojson));
-        console.log(' outline end');
-    // !!
-    downloadGeojson(geojson);
-    feature = {};
-    // writeFile("d:\\tt.json", geojson);
-    // "f:\\421.json"
-    geojson = {};
-    features = [];
-
-    }
-
-
-    function createOutlineGeojson(data, isCompressed, outlineCallback) {
-
-        // var dList = data.districtList;
-        var cityCode = data.citycode;
-        var level = data.level;
-
-        console.log(data);
-        //获取市以及市下面的地区
-        if(level === 'district') {
-            createDistFeature(data, citycode);
-            outlineCallback();
-
-        } else {
-            createFeature(data);
-            console.log(feature);
-            outlineCallback();
-
-
-        }
-
-    }
-
-    function createFeature (district) {
-        console.log(district);
-
-        var cp = [];
-        var coordinatesSet = [];
-
-                // console.log(district.adcode);
-                feature.id = district.adcode;
-                // console.log(district.name);
-                feature.properties.name = district.name;
-                feature.properties.childNum = district.boundaries.length;
-
-                if(feature.properties.childNum > 1) {
-                    feature.geometry.type = "MultiPolygon";
-                }
-
-                cp[0] = district.center.lng;
-                cp[1] = district.center.lat;
-                feature.properties.cp = cp;
-                cp = [];
-                getCoo(district, coordinatesSet);
-                // console.log(coordinatesSet.length);
-                feature.geometry.coordinates = coordinatesSet;
-                // console.log(coordinatesSet.length);
-                features.push(feature);
-                console.log(feature);
-
-
-            }
-
-
-            function createDistFeature (district, citycode) {
-
-                var cp = [];
-                var coordinatesSet = [];
-
-                // console.log(district.adcode);
-                feature.id = district.adcode;
-                // console.log(district.name);
-                feature.properties.name = district.name;
-                feature.properties.childNum = district.boundaries.length;
-
-                if(feature.properties.childNum > 1) {
-                    feature.geometry.type = "MultiPolygon";
-                }
-
-                cp[0] = district.center.lng;
-                cp[1] = district.center.lat;
-                feature.properties.cp = cp;
-                cp = [];
-                getCoo(district, coordinatesSet);
-                // console.log(coordinatesSet.length);
-                feature.geometry.coordinates = coordinatesSet;
-                features.push(feature);
-                // console.log(coordinatesSet.length);
-
-                // console.log(feature);
-
-
-
-            }
-
-
-            function createDetailedGeojson(data, isCompressed, detailedCallback) {
-
-                var dList = data.districtList;
-                var cityCode = data.citycode;
-
-                console.log(cityCode);
-        //获取市以及市下面的地区
-        if(cityCode.length) {
-            for(var m = 0, mlength = dList.length; m < mlength; m++) {
-
-                var keyword = dList[m].name;
-                asynFlag++;
-
-                district.search(keyword, function(status, result){
-                    asynFlag--;
-                    var subDistrictList = result.districtList;
-                    var feature = createDistFeatures(subDistrictList, citycode);
-                    features.push(feature);
-                    feature = null;
-                    detailedCallback();
-                });
-            }
-        } else {
-
-            for(var m = 0, mlength = dList.length; m < mlength; m++) {
-
-                var keyword = dList[m].name;
-                asynFlag++;
-
-                district.search(keyword, function(status, result){
-                    asynFlag--;
-                    var subDistrictList = result.districtList;
-                    var feature = createFeatures(subDistrictList);
-                    features.push(feature);
-                    feature = null;
-                    detailedCallback();
-                });
-            }
-
-        }
-
-    }
-
-
-    function createFeatures (districtList) {
-        var feature = new Feature();
-        var cp = [];
-        var coordinatesSet = [];
-        var district = {};
-
-        for (var d = 0, dlength = districtList.length; d < dlength; d++) {
-            district = districtList[d];
-                // console.log(district.adcode);
-                feature.id = district.adcode;
-                // console.log(district.name);
-                feature.properties.name = district.name;
-                feature.properties.childNum = district.boundaries.length;
-
-                if(feature.properties.childNum > 1) {
-                    feature.geometry.type = "MultiPolygon";
-                }
-
-                cp[0] = district.center.lng;
-                cp[1] = district.center.lat;
-                feature.properties.cp = cp;
-                cp = [];
-                getCoo(district, coordinatesSet);
-                // console.log(coordinatesSet.length);
-                feature.geometry.coordinates = coordinatesSet;
-                // console.log(coordinatesSet.length);
-                coordinatesSet = [];
-                // console.log(feature);
-                return feature;
-                district = {};
-            }
-        }
-
-
-        function createDistFeatures(districtList, citycode) {
-            var feature = new Feature();
-            var cp = [];
-            var coordinatesSet = [];
-            var district = {};
-
-            for (var d = 0, dlength = districtList.length; d < dlength; d++) {
-                district = districtList[d];
-                if (district.citycode === citycode) {
-                // console.log(district.adcode);
-                feature.id = district.adcode;
-                // console.log(district.name);
-                feature.properties.name = district.name;
-                feature.properties.childNum = district.boundaries.length;
-
-                if(feature.properties.childNum > 1) {
-                    feature.geometry.type = "MultiPolygon";
-                }
-
-                cp[0] = district.center.lng;
-                cp[1] = district.center.lat;
-                feature.properties.cp = cp;
-                cp = [];
-                getCoo(district, coordinatesSet);
-                // console.log(coordinatesSet.length);
-                feature.geometry.coordinates = coordinatesSet;
-                // console.log(coordinatesSet.length);
-                coordinatesSet = [];
-                // console.log(feature);
-                return feature;
-            }
-
-            district = {};
-        }
-    }
-
-    function getCoo (obj, coo) {
-        var point = [];
-        var cooItem = [];
-        var cooSet = [];
-        var plength = obj.boundaries.length;
-
-    // feature为Polygon
-    if (plength === 1) {
-        var boundary = obj.boundaries[0];
-        for (var b = 0; b < boundary.length; b++) {
-            point[0] = boundary[b].lng;
-            point[1] = boundary[b].lat;
-            cooItem.push(point);
-            point = [];
-        }
-        coo.push(cooItem);
-
-    // feature为MultiPolygon
-    } else {
-        for (var p = 0; p < plength; p++) {
-            var boundary = obj.boundaries[p];
-            for (var b = 0; b < boundary.length; b++) {
-                point[0] = boundary[b].lng;
-                point[1] = boundary[b].lat;
-                cooItem.push(point);
-                point = [];
-            }
-            cooSet.push(cooItem);
-            cooItem = [];
-            coo.push(cooSet);
-            cooSet = [];
-
-        }
-
-    }
-
-    }
-
-    // function writeFile(fileName, json) {
-    // // "f:\\421.json"
-    // // for (var i = 0; i < cos.length; i++) {
-    // var fso = new ActiveXObject("Scripting.FileSystemObject");
-    // var f1 = fso.createtextfile(fileName, true, true);
-
-    // var str = JSON.stringify(json);
-    // // console.log(str);
-    // f1.write(str);
-    // f1.close();
-    // // }
-    // }
-
-    function downloadGeojson(geojson) {
-        var str = JSON.stringify(geojson);
-    // console.log(str);
-    var blob = new Blob([str], {
-        type: 'text/plain;charset=utf8'
-    });
-
-    var fileName = ['success'];
-    fileName.push('json');
-    saveAs(blob, fileName.join('.'));
-    }
-
-    function compressAndDownloadGeojson(geojson) {
-
-    }
-
-    var downLoadButton = document.getElementById('downLoadButton');
-
-
-    downLoadButton.addEventListener('click', function(){
-        var provinceList = document.getElementById('province');
-        var cityList = document.getElementById('city');
-        var districtList = document.getElementById('district');
-        var selectProvince = provinceList[provinceList.options.selectedIndex];
-        var selectCity = cityList[cityList.options.selectedIndex];
-        var selectDistrict = districtList[districtList.options.selectedIndex];
-
-    // test
-    var isOutlineRadios = document.getElementsByName('type');
-    var isCompressedRadios = document.getElementsByName('compress');
-        // console.log(getRadioValue(isOutlineRadios));
-
-        var isOnlyOutline = getRadioValue(isOutlineRadios) === 'outline' ? true : false;
-        console.log(getRadioValue(isCompressedRadios));
-        var isCompressed = getRadioValue(isCompressedRadios) === 'isCompressed' ? true : false;
         console.log(isCompressed);
         var getType = 0;
 
 
-        console.log(selectCity);
-        console.log(selectDistrict);
-        console.log(selectProvince);
-
-        if (selectProvince.text == '--全部--') {
+        if (selectProvince.text() == trimProvince) {
             getType++;
         }
 
-        if (selectCity.text == '--全部--') {
+        if (selectCity.text() == trimCity) {
             console.log(selectCity);
             getType++;
         }
 
-        if (selectDistrict.text == '--全部--') {
+        if (selectDistrict.text() == trimDistrict) {
             getType++;
         }
 
-        console.log(getType);
-
         switch (getType) {
             case 3:
-            downLoadGeojson('中国', isOnlyOutline, isCompressed);
+            fileStr = '中国';
+            startDownload('中国', isOnlyOutline, isCompressed);
             getType = 0;
             break;
             case 2:
-            downLoadGeojson(selectProvince, isOnlyOutline, isCompressed);
+            fileStr = selectProvince.text();
+            startDownload(selectProvince, isOnlyOutline, isCompressed);
             getType = 0;
             break;
             case 1:
-            downLoadGeojson(selectCity, isOnlyOutline, isCompressed);
+            fileStr = selectCity.text();
+            startDownload(selectCity, isOnlyOutline, isCompressed);
             getType = 0;
             break;
             case 0:
-            downLoadGeojson(selectDistrict, true, isCompressed);
+            fileStr = selectDistrict.text();
+            startDownload(selectDistrict, true, isCompressed);
             getType = 0;
             break;
             default:
@@ -591,77 +185,34 @@
             alert('请选择正确的地图范围');
         }
 
-    });
-
-    function downLoadGeojson(range, isOnlyOutline, isCompressed) {
-
-        console.log(range);
-        var level;
-        var keyword;
-        var arrTemp;
-        var citycode;
-
-        if (range == '中国') {
-            console.log('enter');
-            level = 'country';
-            keyword = '中国';
-
-        }
-        else {
-
-            arrTemp = range.value.split('|');
-            level = arrTemp[0];//行政级别
-            citycode = arrTemp[1];// 城市编码
-            keyword = range.text; //关键字
-
-        }
-
-        if (isOnlyOutline) {
-            district.setSubdistrict(0);
-        }
-        else {
-            district.setSubdistrict(1);
-        }
-
-    //行政区级别
-    district.setLevel(level);
-
-    //行政区查询
-    console.log(keyword);
-    district.search(keyword, function(status, result){
-        if (isOnlyOutline) {
-            createOutlineGeojson(result.districtList[0], isCompressed, outlineCallback);
-        }
-        else {
-            createDetailedGeojson(result.districtList[0], isCompressed, detailedCallback);
-        }
-
-    });
-
     }
 
 
-    provinceSelect.addEventListener('change', provinceSelectCallback);
 
-    function provinceSelectCallback(e) {
-        var obj = e.target;
-        var content = '<option>--全部--</option>';
-        // //清除地图上所有覆盖物
-        // for(var i = 0, l = polygons.length; i < l; i ++){
-        //     polygons[i].setMap(null);
-        // }
 
-        var option = obj[obj.options.selectedIndex];
-        var arrTemp = option.value.split('|');
+    $('#province').change(provinceSelectCallback);
+
+
+    function provinceSelectCallback() {
+
+
+        $('#outlineAndPartition').removeAttr("disabled");
+        var arrTemp = $(this).val().split('|');
 
 
         var level = arrTemp[0];//行政级别
         citycode = arrTemp[1];// 城市编码
-        var keyword = option.text; //关键字
+        var keyword = $(this).find("option:selected").text(); //关键字
 
-        if (keyword === '--全部--') {
-            citySelect.innerHTML = content;
-            districtSelect.innerHTML = content;
+        isCentralCity = isCentral(keyword);
+        console.log(isCentralCity);
+
+        var trimProvince = INIT_PROVINCE_CONTENT.replace(/<option>(.*?)<\/option>/g,"$1");
+
+        if (keyword == trimProvince) {
+            $('#city').html(INIT_CITY_CONTENT);
+            $('#district').html(INIT_DISTRICT_CONTENT);
+
         } else {
             district.setLevel(level); //行政区级别
             //行政区查询
@@ -673,57 +224,58 @@
         });
 
         }
+
+
     }
 
-    citySelect.addEventListener('change', citySelectCallback);
-    function citySelectCallback(e) {
-        var obj = e.target;
-        var content = '<option>--全部--</option>';
-        // //清除地图上所有覆盖物
-        // for(var i = 0, l = polygons.length; i < l; i ++){
-        //     polygons[i].setMap(null);
-        // }
+    $('#city').change(citySelectCallback);
+    function citySelectCallback() {
+        // var obj = e.target;
+        // var content = '<option>--全部--</option>';
+        // var option = obj[obj.options.selectedIndex];
+        $('#outlineAndPartition').removeAttr("disabled");
+        var arrTemp = $(this).val().split('|');
+        // var arrTemp = option.value.split('|');
 
-        var option = obj[obj.options.selectedIndex];
-        var arrTemp = option.value.split('|');
 
 
         var level = arrTemp[0];//行政级别
         citycode = arrTemp[1];// 城市编码
-        var keyword = option.text; //关键字
-
-        if (keyword === '--全部--') {
-            districtSelect.innerHTML = content;
+        var keyword = $(this).find("option:selected").text();
+        var trimCity = INIT_CITY_CONTENT.replace(/<option>(.*?)<\/option>/g,"$1");
+        if (keyword == trimCity) {
+            $('#district').html(INIT_DISTRICT_CONTENT);
         } else {
             district.setLevel(level); //行政区级别
             //行政区查询
             district.search(keyword, function(status, result){
-
                 getData(result);
-            // getGeojson(result.districtList[0]);
-
         });
 
         }
     }
-
-    districtSelect.addEventListener('change', districtSelectCallback);
-    function districtSelectCallback(e) {
-        var obj = e.target;
+    $('#district').change(districtSelectCallback);
+    function districtSelectCallback() {
+        // var obj = e.target;
 
         // //清除地图上所有覆盖物
         // for(var i = 0, l = polygons.length; i < l; i ++){
         //     polygons[i].setMap(null);
         // }
 
-        var option = obj[obj.options.selectedIndex];
-        var arrTemp = option.value.split('|');
+        // var option = obj[obj.options.selectedIndex];
 
+        $('#outline').prop("checked", true);
+        $('#outlineAndPartition').prop("disabled", true);
+
+        var arrTemp = $(this).val().split('|');
 
         var level = arrTemp[0];//行政级别
         citycode = arrTemp[1];// 城市编码
-        var keyword = option.text; //关键字
+        // var keyword = option.text; //关键字
 
+        var keyword = $(this).find("option:selected").text();
+        // var trimDistrict = INIT_DISTRICT_CONTENT.replace(/<option>(.*?)<\/option>/g,"$1");
 
             district.setLevel(level); //行政区级别
             //行政区查询
@@ -736,15 +288,117 @@
 
         }
 
-        function getRadioValue(radioButtons) {
-            for(r = 0, rl = radioButtons.length; r < rl; r++) {
-                if (radioButtons[r].checked) {
-                    return radioButtons[r].value;
+        // function getRadioValue(radioButtons) {
+        //     for(r = 0, rl = radioButtons.length; r < rl; r++) {
+        //         if (radioButtons[r].checked) {
+        //             return radioButtons[r].value;
+        //         }
+        //     }
+        // }
+
+function isCentral(cityName) {
+    var isCentralCity = false;
+    for (var c = 0; c < CENTRAL_CITIES.length; c++) {
+        if (cityName == CENTRAL_CITIES[c]) {
+            isCentralCity = true;
+            return isCentralCity;
+        }
+    }
+    return isCentralCity;
+}
+
+    function getData(e) {
+
+        // var initContent = INIT_DEFAULT_CONTENT;
+        var list = e.districtList || [],
+        subList =[], level, nextLevel;
+        if(list.length >= 1) {
+            subList = list[0].districtList;
+            level = list[0].level;
+
+            //清空下一级别的下拉列表
+            if(level === 'province'){
+
+                nextLevel = 'city';
+                $('#city').html(INIT_CITY_CONTENT);
+                $('#district').html(INIT_DISTRICT_CONTENT);
+
+            }else if(level === 'city'){
+
+                nextLevel = 'district';
+                $('#district').html(INIT_DISTRICT_CONTENT);
+
+            } else if(level === 'district') {
+
+                nextLevel = 'biz_area';
+
+            }
+
+            if(subList){
+                if (subList[0].level == 'city') {
+                    initContent = INIT_CITY_CONTENT;
+                } else {
+                    initContent = INIT_DISTRICT_CONTENT;
                 }
+                var contentSub = initContent;
+
+                for(var i=0,l=subList.length; i<l; i++){
+                    var name = subList[i].name;
+                    var levelSub = subList[i].level;
+                    var cityCode = subList[i].citycode;
+                    contentSub += '<option value="'+levelSub+'|'+cityCode+'">'+name+'</option>';
+                }
+                $('#'+levelSub).html(contentSub);
             }
         }
+    }
+//
 
-        </script>
+
+    function search(obj) {
+
+        var option = obj[obj.options.selectedIndex];
+        var arrTemp = option.value.split('|');
+
+        var level = arrTemp[0];//行政级别
+        citycode = arrTemp[1];// 城市编码
+        var keyword = option.text; //关键字
+
+        district.setLevel(level); //行政区级别
+        //行政区查询
+        district.search(keyword, function(status, result){
+
+            getData(result);
+
+        });
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    </script>
 
 </body>
 <body>
