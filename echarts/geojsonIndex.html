@@ -80,7 +80,9 @@
 
     //是否是直辖市或者香港澳门
     var isCentralCity = false;
-    var CENTRAL_CITIES = ['北京市','上海市','天津市','重庆市','香港特别行政区', '澳门特别行政区'];
+    var isAomenOrHK = false;
+    var CENTRAL_CITIES = ['北京市','上海市','天津市','重庆市'];
+    var AOMEN_AND_HK = ['香港特别行政区', '澳门特别行政区'];
 
     var geojson = new Geojson();
     var features = [];
@@ -102,13 +104,49 @@
         })
     });
 
-    var provinceList = ['北京市', '天津市', '河北省', '山西省', '内蒙古自治区', '辽宁省', '吉林省','黑龙江省', '上海市', '江苏省', '浙江省', '安徽省', '福建省', '江西省', '山东省','河南省', '湖北省', '湖南省', '广东省', '广西壮族自治区', '海南省', '重庆市','四川省', '贵州省', '云南省', '西藏自治区', '陕西省', '甘肃省', '青海省', '宁夏回族自治区', '新疆维吾尔自治区', '香港特别行政区', '澳门特别行政区'];
+    var centralCity = [
+        {
+            name: '北京市',
+            code: '010'
+        },
+        {   
+            name: '天津市',
+            code: '022'
+        },
+        {   
+            name: '上海市',
+            code: '021'
+        },
+        {   
+            name: '重庆市',
+            code: '023'
+        },
+        {   
+            name: '香港特别行政区',
+            code: '1852'
+        },
+        {
+            name: '澳门特别行政区',
+            code: '1853'
+        }
+    ];
+
+    var provinceList = ['河北省', '山西省', '内蒙古自治区', '辽宁省', '吉林省','黑龙江省',  '江苏省', '浙江省', '安徽省', '福建省', '江西省', '山东省','河南省', '湖北省', '湖南省', '广东省', '广西壮族自治区', '海南省', '四川省', '贵州省', '云南省', '西藏自治区', '陕西省', '甘肃省', '青海省', '宁夏回族自治区', '新疆维吾尔自治区'];
 
     var content = INIT_PROVINCE_CONTENT;
 
-    for(var i =0, l = provinceList.length; i < l; i++){
+    for (var c = 0, cl = centralCity.length-2; c < cl; c++) {
+        content +=  '<option value="city|' + centralCity[c].code + '">' + centralCity[c].name + '</option>';
+    }
+
+    for (var i = 0, l = provinceList.length; i < l; i++) {
         content += '<option value="province">'+provinceList[i]+'</option>';
     }
+
+    for (var cc = centralCity.length-2, ccl = centralCity.length; cc < ccl; cc++) {
+        content +=  '<option value="city|' + centralCity[cc].code + '">' + centralCity[cc].name + '</option>';
+    }
+
     $('#province').html(content);
 
     //行政区划查询
@@ -145,18 +183,26 @@
         console.log(isCompressed);
         var getType = 0;
 
+        if (isAomenOrHK || isCentralCity) {
+            if (selectDistrict.text() == trimDistrict) {
+                getType = 2;
+            } else {
+                getType = 0;
+            }
 
-        if (selectProvince.text() == trimProvince) {
-            getType++;
-        }
+        } else {
+            if (selectProvince.text() == trimProvince) {
+                getType++;
+            }
 
-        if (selectCity.text() == trimCity) {
-            console.log(selectCity);
-            getType++;
-        }
+            if (selectCity.text() == trimCity) {
+                console.log(selectCity);
+                getType++;
+            }
 
-        if (selectDistrict.text() == trimDistrict) {
-            getType++;
+            if (selectDistrict.text() == trimDistrict) {
+                getType++;
+            }
         }
 
         switch (getType) {
@@ -195,7 +241,7 @@
 
     function provinceSelectCallback() {
 
-
+        $('#city').removeAttr("disabled");
         $('#outlineAndPartition').removeAttr("disabled");
         var arrTemp = $(this).val().split('|');
 
@@ -204,8 +250,14 @@
         citycode = arrTemp[1];// 城市编码
         var keyword = $(this).find("option:selected").text(); //关键字
 
-        isCentralCity = isCentral(keyword);
+        isCentralCity = isSpecialCity(keyword, CENTRAL_CITIES);
+        isAomenOrHK = isSpecialCity(keyword, AOMEN_AND_HK);
         console.log(isCentralCity);
+        console.log(isAomenOrHK);
+
+        if (isAomenOrHK) {
+            $('#city').prop("disabled", true);
+        }
 
         var trimProvince = INIT_PROVINCE_CONTENT.replace(/<option>(.*?)<\/option>/g,"$1");
 
@@ -296,16 +348,18 @@
         //     }
         // }
 
-function isCentral(cityName) {
-    var isCentralCity = false;
-    for (var c = 0; c < CENTRAL_CITIES.length; c++) {
-        if (cityName == CENTRAL_CITIES[c]) {
-            isCentralCity = true;
-            return isCentralCity;
+function isSpecialCity(cityName, list) {
+    var isSpecial = false;
+    for (var c = 0; c < list.length; c++) {
+        if (cityName == list[c]) {
+            isSpecial = true;
+            return isSpecial;
         }
     }
-    return isCentralCity;
+    return isSpecial;
 }
+
+
 
     function getData(e) {
 

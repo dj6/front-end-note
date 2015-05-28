@@ -37,11 +37,14 @@ function startDownload(range, isOnlyOutline, isCompressed) {
     else {
 
         arrTemp = range.val().split('|');
+        console.log(arrTemp);
         level = arrTemp[0];//行政级别
         citycode = arrTemp[1];// 城市编码
         keyword = range.text(); //关键字
 
     }
+
+
 
     if (isOnlyOutline) {
         district.setSubdistrict(0);
@@ -55,6 +58,7 @@ function startDownload(range, isOnlyOutline, isCompressed) {
 
     //行政区查询
     console.log(keyword);
+    console.log(level);
     district.search(keyword, function(status, result){
         console.log(result);
         if (isOnlyOutline) {
