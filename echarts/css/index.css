@@ -150,14 +150,14 @@ main h1 {
 }
 
 #range select {
-  width: 150px;
+  width: 200px;
 
 }
 
 
 #range label {
   display: inline-block;
-  width:50px;
+  width:100px;
   text-align: right;
 }
 #mapContainer {
@@ -166,3 +166,4 @@ main h1 {
 footer {
   margin-top: 50px;
 }
+

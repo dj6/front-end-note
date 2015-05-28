@@ -21,17 +21,18 @@
             <section id="range">
                 <h3>范围<span>  range</span></h3>
                 <p>
-                    <label for="province">省：</label>
+                    <label for="province">省:</label>
+
                     <select id='province'></select>
                 </p>
 
                 <p>
-                    <label for="province">市：</label>
+                    <label for="province">市:</label>
                     <select id='city'><option>--  所有城市  --</option></select>
                 </p>
 
                 <p>
-                    <label for="province">区县：</label>
+                    <label for="province">区县:</label>
                     <select id='district'><option>--  所有区县  --</option></select>
                 </p>
 
@@ -81,14 +82,14 @@
     //是否是直辖市或者香港澳门
     var isCentralCity = false;
     var isAomenOrHK = false;
-    var CENTRAL_CITIES = ['北京市','上海市','天津市','重庆市'];
+    var CENTRAL_CITIES = ['北京市市辖区','上海市市辖区','天津市市辖区','重庆市市辖区'];
     var AOMEN_AND_HK = ['香港特别行政区', '澳门特别行政区'];
 
     var geojson = new Geojson();
     var features = [];
     var feature = new Feature();
 
-    var INIT_PROVINCE_CONTENT = '<option>--  所有省  --</option>';
+    var INIT_PROVINCE_CONTENT = '<option>--  所有省(行政区,直辖市)  --</option>';
     var INIT_CITY_CONTENT = '<option>--  所有城市  --</option>';
     var INIT_DISTRICT_CONTENT = '<option>--  所有区县  --</option>';
     var INIT_DEFAULT_CONTENT = '<option>--  全部  --</option>';
@@ -106,22 +107,22 @@
 
     var centralCity = [
         {
-            name: '北京市',
+            name: '北京市市辖区',
             code: '010'
         },
-        {   
-            name: '天津市',
+        {
+            name: '天津市市辖区',
             code: '022'
         },
-        {   
-            name: '上海市',
+        {
+            name: '上海市市辖区',
             code: '021'
         },
-        {   
-            name: '重庆市',
+        {
+            name: '重庆市市辖区',
             code: '023'
         },
-        {   
+        {
             name: '香港特别行政区',
             code: '1852'
         },
@@ -255,7 +256,7 @@
         console.log(isCentralCity);
         console.log(isAomenOrHK);
 
-        if (isAomenOrHK) {
+        if (isAomenOrHK || isCentralCity) {
             $('#city').prop("disabled", true);
         }
 
